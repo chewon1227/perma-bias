@@ -1,0 +1,46 @@
+import pandas as pd
+import json
+from tqdm import tqdm
+
+chunksize = 10000 
+
+# job_skills.csv 파일 읽기
+
+print("파일을 읽고 있습니다")
+
+job_skills_iter = pd.read_csv('/Users/chaewon/Desktop/MIR_LAB/CareerCounseling/row_data/13_KaggleLinkedin/job_skills.csv', chunksize=chunksize)
+job_skills_df = pd.concat(job_skills_iter, ignore_index=True)
+
+job_summary_iter = pd.read_csv('/Users/chaewon/Desktop/MIR_LAB/CareerCounseling/row_data/13_KaggleLinkedin/job_summary.csv', chunksize=chunksize)
+job_summary_df = pd.concat(job_summary_iter, ignore_index=True)
+
+job_postings_iter = pd.read_csv('/Users/chaewon/Desktop/MIR_LAB/CareerCounseling/row_data/13_KaggleLinkedin/linkedin_job_postings.csv', chunksize=chunksize)
+job_postings_df = pd.concat(job_postings_iter, ignore_index=True)
+
+print("모든 파일을 성공적으로 읽었습니다.")
+
+print("데이터 병합을 진행합니다...")
+
+merged_df = pd.merge(job_postings_df, job_skills_df, on='job_link', how='outer')
+merged_df = pd.merge(merged_df, job_summary_df, on='job_link', how='outer')
+
+merged_df['job_name'] = merged_df['job_title'].str.lower()
+
+sorted_df = merged_df.sort_values(by='job_name')
+
+result = sorted_df.to_dict(orient='records')
+
+reordered_result = []
+for record in result:
+    reordered_record = {'job_name': record['job_name']}  # job_name을 맨 앞에 추가
+    reordered_record.update({k: v for k, v in record.items() if k != 'job_name'})  # 나머지 키 추가
+    reordered_result.append(reordered_record)
+
+# JSON 파일로 저장
+print("JSON 파일로 저장을 시작합니다...")
+with tqdm(total=len(reordered_result), desc="JSON 저장 진행") as pbar:
+    with open('curated_jobs_full.json', 'w', encoding='utf-8') as f:
+        json.dump(reordered_result, f, ensure_ascii=False, indent=4)
+        pbar.update(len(reordered_result))
+
+print("JSON 파일로 저장이 완료되었습니다.")

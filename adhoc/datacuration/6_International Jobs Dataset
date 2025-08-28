@@ -1,0 +1,48 @@
+import pandas as pd
+import json
+from tqdm import tqdm  
+
+def process_csv(file_path):
+    df = pd.read_csv(file_path)
+
+    job_data = {}
+
+    for index, row in tqdm(df.iterrows(), total=df.shape[0], desc="Processing rows"):
+        job_title = row['Job-Title']
+        company_name = row['Company']
+        description = row['Description']
+        location = row['Location']
+        salary = row.get('Salary', None)  
+
+        if job_title not in job_data:
+            job_data[job_title] = {
+                'company_name': company_name,
+                'locations': [],
+                'descriptions': [],
+                'salaries': []
+            }
+        
+        if location not in job_data[job_title]['locations']:
+            job_data[job_title]['locations'].append(location)
+        if description not in job_data[job_title]['descriptions']:
+            job_data[job_title]['descriptions'].append(description)
+        if salary and salary not in job_data[job_title]['salaries']:
+            job_data[job_title]['salaries'].append(salary)
+
+    return job_data
+
+def save_as_json(data, output_path):
+    with open(output_path, 'w', encoding='utf-8') as f:
+        json.dump(data, f, ensure_ascii=False, indent=4)
+
+if __name__ == "__main__":
+    # file path 
+    csv_file_path = 'data/alljobs.csv'  
+    output_json_path = 'data/alljobs_output.json'
+
+    job_data = process_csv(csv_file_path)
+
+    save_as_json(job_data, output_json_path)
+
+    print(f"Finish: {output_json_path}")
+    print(f"# of worked data: {len(job_data)}")

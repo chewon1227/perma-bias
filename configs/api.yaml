@@ -1,0 +1,5 @@
+openai:
+  api_key: "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"
+
+huggingface:
+  access_token: "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"
